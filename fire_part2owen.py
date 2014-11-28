@@ -203,22 +203,29 @@ class Firewall:
         # add ip checksum
         pass
 
-    def create_DNS_deny(self):
+    def create_DNS_deny(self, pkt):
         # Make a fake DNS packet and send it
 
         # Check if DNS query
 
-
+        # dns_pkt_ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
+        
         # Create a new packet form IP header of old packet
-        # UDP header
+        # dns_pkt = pkt[:dns_pkt_ihl]
+        
+        # UDP header, 8 more than original ihl
+        # dns_pkt = dns_pkt + pkt[dns_pkt_ihl: dns_pkt_ihl + 8]
+        
         # TTL to max
         # Swap direction of packet to deny
             # src_ip and dst_ip are swapped. src_port and dst_port are swapped
-
+            # new_dns_packet = SWAP_PKT_DIR()()(()()new_dns_packet)
+        
         # Row 1
-        # Get DNS identifier
+        # Get DNS identifier from old packet
+        
         # ROW 2
-        # Set DNS response flags and copy RCODE
+        # Set DNS response flags and copy RCODE ovr
         
         # ROWS 3-6
         # DNS QDCOUNT
@@ -249,18 +256,27 @@ class Firewall:
     def udp_checksum(self):
         pass
 
+    def swap_pkt_dir(self, pkt):
+        #Swap src and dst ip
+        src_ip = pkt[12:16]
+        dest_ip = pkt[16:20]
+        pkt = pkt[:12] + dest_ip + src_ip + pkt[20:]
+        #swap ports
+        # ------TODO------
+        # dns_ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
+
+        # srcport = pkt[ihl:ihl+2]
+        # destPort = pkt[ihl+2:ihl+4]
+
+        # pkt = pkt[:ihl] + destPort + srcport + pkt[ihl+4:]
+
+        return pkt
+        
+
     def packet_quality(self):
         #If IHL of packet is less than 20, bad packet
+
         pass
-
-    def create_firewall_packet():
-        # Create a firewall packet
-        # Include protocol_type
-        # ExtPort
-        # 
-        pass
-
-
 
     class Firewall_Pkt:
         def __init__(self, pkt_dir, pkt):
@@ -286,6 +302,7 @@ class Firewall:
 
             #Set packet IP Header size
                 # self.ihl = unpack the ip header size
+                # self.ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
 
             #Set Port 
                 # self.port
