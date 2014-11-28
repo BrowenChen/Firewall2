@@ -213,12 +213,19 @@ class Firewall:
         # UDP header
         # TTL to max
         # Swap direction of packet to deny
+            # src_ip and dst_ip are swapped. src_port and dst_port are swapped
+
+        # Row 1
         # Get DNS identifier
-        # Set DNS response flags and copy RCODe
+        # ROW 2
+        # Set DNS response flags and copy RCODE
+        
+        # ROWS 3-6
         # DNS QDCOUNT
         # DNS ANCOUNT
         # DNS NSCOUNT
         # DNS ARCOUNT
+        
         # get domain name from query
         # Add pointer to sstart of queried name
         # Response type A
@@ -243,6 +250,7 @@ class Firewall:
         pass
 
     def packet_quality(self):
+        #If IHL of packet is less than 20, bad packet
         pass
 
     def create_firewall_packet():
