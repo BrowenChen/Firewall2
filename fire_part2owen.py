@@ -198,9 +198,48 @@ class Firewall:
 
 
     def create_TCP_rst(self):
+
+        # add udp checksum
+        # add ip checksum
         pass
 
     def create_DNS_deny(self):
+        # Make a fake DNS packet and send it
+
+        # Check if DNS query
+
+
+        # Create a new packet form IP header of old packet
+        # UDP header
+        # TTL to max
+        # Swap direction of packet to deny
+        # Get DNS identifier
+        # Set DNS response flags and copy RCODe
+        # DNS QDCOUNT
+        # DNS ANCOUNT
+        # DNS NSCOUNT
+        # DNS ARCOUNT
+        # get domain name from query
+        # Add pointer to sstart of queried name
+        # Response type A
+        # Response class to class INCOMING
+        # DNS query TTL to 1 second
+        # Define address block as 4 octects
+        # add the spoofed IP to DNS response
+        # UDP header size
+        # Add udp checksum and ip checksum
+
+        # Send denied DNS response to host behind the firewall
+
+        pass
+
+    def tcp_checksum(self):
+        pass
+
+    def ip_checksum(self):
+        pass
+
+    def udp_checksum(self):
         pass
 
     def packet_quality(self):
