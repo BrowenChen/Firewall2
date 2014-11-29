@@ -269,9 +269,14 @@ class Firewall:
 
         # add the spoofed IP to DNS response.
         dns_spoof_ip = '54.173.224.150'
-        dns_pkt += str.join('', map(char, map(int,dns_spoof_ip.split('.'))))
 
+        # hstruct.pack("!I", socket.inet_aton(dns_spoof_ip))[0]
 
+        dns_split = dns_spoof_ip.split('.')
+        converted_ip = []
+        for k in dns_split:
+            converted_ip.append(struct.pack("!H", k))
+        dns_pkt += str.join('', converted_ip)
 
         # update UDP header size
         dns_pkt = dns_pkt[:dns_pkt_ihl+4] + struct.pack('!H', len(dns_pkt) - dns_pkt_ihl) + dns_pkt[dns_pkt_ihl+6:]
@@ -279,6 +284,7 @@ class Firewall:
         # Add udp checksum and ip checksum
         # dns_pkt = add_udp_checksum
         # dns_pkt = add_ip_checksum
+        
         # Send denied DNS response to host behind the firewall
         self.iface_int_send_ip_packet(dns_pkt)
         return
@@ -287,6 +293,9 @@ class Firewall:
         pass
 
     def ip_checksum(self):
+        pass
+
+    def udp_checksum(self):
         pass
 
     # # takes in an unspecified amount of 16-bitstrings
@@ -307,14 +316,6 @@ class Firewall:
     #     return solution
 
 
-
-
-
-
-        
-
-    def udp_checksum(self):
-        pass
 
     def swap_pkt_dir(self, pkt):
         #Swap src and dst ip
