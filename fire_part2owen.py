@@ -208,13 +208,11 @@ class Firewall:
 
         dns_pkt_ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
         #Check if this packet is a DNS query. 1-bit QR field must be 0
-        qr = ord(pkt[dns_pkt_ihl+10] >> 3) & 15
-        if qr != 0:
+        DNS_query = ord(pkt[dns_pkt_ihl+10] >> 3) & 15
+        if DNS_query != 0:
             #Not a DNS query
             return 
         
-
-
         
         
         # Create a new packet form IP header of old packet
@@ -237,28 +235,53 @@ class Firewall:
 
     
         # ROW 2
-        # Set DNS response flags and copy RCODE over
-
+        # Set DNS response flags 0x8180 and copy RCODE over to the 0
+        dns_pkt = dns_pkt + "\x81" + (chr(ord("\80") | ord(pkt[dns_pkt_ihl+11])))
         
-        # ROWS 3-6
-        # DNS QDCOUNT
-        # DNS ANCOUNT
-        # DNS NSCOUNT
-        # DNS ARCOUNT
+        # ROWS 3-6 16 Bits each
+        # DNS QDCOUNT = 1
+        dns_pkt += "\x00\x01"
+        # DNS ANCOUNT = 0?
+        dns_pkt += "\x00\x01"
+        # DNS NSCOUNT = 0
+        dns_pkt += "\x00\x00"
+        # DNS ARCOUNT = 0
+        dns_pkt += "\x00\x00"
         
         # get domain name from query
-        # Add pointer to sstart of queried name
+        dns_pkt = dns_pkt + pkt[dns_pkt_ihl+20:]
+
+        # Get the domain name from query for Name
+        #Confused here, this is the value to set pointer to query domain?
+        dns_pkt += "\c0\0c"
+
+
         # Response type A
+        dns_pkt += "\x00\x01"
+
         # Response class to class INCOMING
+        dns_pkt += "\x00\x01"
+        
         # DNS query TTL to 1 second
-        # Define address block as 4 octects
-        # add the spoofed IP to DNS response
-        # UDP header size
+        dns_pkt += "\x00\x00\x00\x01"
+        # datalength is 4 octects for IPv4
+        dns_pkt += "\x00\x04"
+
+        # add the spoofed IP to DNS response.
+        dns_spoof_ip = '54.173.224.150'
+        dns_pkt += str.join('', map(char, map(int,dns_spoof_ip.split('.'))))
+
+
+
+        # update UDP header size
+        dns_pkt = dns_pkt[:dns_pkt_ihl+4] + struct.pack('!H', len(dns_pkt) - dns_pkt_ihl) + dns_pkt[dns_pkt_ihl+6:]
+
         # Add udp checksum and ip checksum
-
+        # dns_pkt = add_udp_checksum
+        # dns_pkt = add_ip_checksum
         # Send denied DNS response to host behind the firewall
-
-        pass
+        self.iface_int_send_ip_packet(dns_pkt)
+        return
 
     def tcp_checksum(self):
         pass
