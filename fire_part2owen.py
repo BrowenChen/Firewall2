@@ -289,6 +289,30 @@ class Firewall:
     def ip_checksum(self):
         pass
 
+    # # takes in an unspecified amount of 16-bitstrings
+    # #and returns their checksum.
+    # def ip_checksum(self, *args):
+    #     total = reduce(lambda x, y: x + y, args)
+    #     while len(bin(total)) > (16 + 2):
+    #         total = total & 0xffff + total //0xffff
+    #     return self.flip(total)
+ 
+    # # because ~ doesn't fucking do what it's fucking
+    # # supposed to do.
+    # def flip(self, foo):
+    #     solution = ""
+    #     for i in range(16):
+    #         solution = str(1^(1&foo)) + solution
+    #         foo>>=1
+    #     return solution
+
+
+
+
+
+
+        
+
     def udp_checksum(self):
         pass
 
