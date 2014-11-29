@@ -206,26 +206,39 @@ class Firewall:
     def create_DNS_deny(self, pkt):
         # Make a fake DNS packet and send it
 
-        # Check if DNS query
+        dns_pkt_ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
+        #Check if this packet is a DNS query. 1-bit QR field must be 0
+        qr = ord(pkt[dns_pkt_ihl+10] >> 3) & 15
+        if qr != 0:
+            #Not a DNS query
+            return 
+        
 
-        # dns_pkt_ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
+
+        
         
         # Create a new packet form IP header of old packet
-        # dns_pkt = pkt[:dns_pkt_ihl]
+        dns_pkt = pkt[:dns_pkt_ihl]
+
+        #reset TTL to max value
+        dns_pkt = dns_pkt[:8] + struct.pack("!B", 255) + dns_pkt[9:]
+    
         
         # UDP header, 8 more than original ihl
-        # dns_pkt = dns_pkt + pkt[dns_pkt_ihl: dns_pkt_ihl + 8]
+        dns_pkt = dns_pkt + pkt[dns_pkt_ihl: dns_pkt_ihl + 8]
         
-        # TTL to max
         # Swap direction of packet to deny
             # src_ip and dst_ip are swapped. src_port and dst_port are swapped
-            # new_dns_packet = SWAP_PKT_DIR()()(()()new_dns_packet)
+        dns_pkt = self.swap_pkt_dir(dns_pkt)
         
         # Row 1
         # Get DNS identifier from old packet
-        
+        dns_pkt = dns_pkt + pkt[dns_pkt_ihl+8:dns_pkt_ihl+10]
+
+    
         # ROW 2
-        # Set DNS response flags and copy RCODE ovr
+        # Set DNS response flags and copy RCODE over
+
         
         # ROWS 3-6
         # DNS QDCOUNT
