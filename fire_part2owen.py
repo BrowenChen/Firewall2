@@ -26,6 +26,7 @@ class Firewall:
         
         #self.prev_http_type
         #self.http_buffer = {}
+        #self.prev_http_type = "" This is the last HTTP type we sent out, request or response
         
         # -----For http logging----------
 
@@ -125,51 +126,67 @@ class Firewall:
         # for rule in log_rules
             # if rule[0] is "log" and rule[1] is "http"
                 #has to be tcp and port 80. pkt_object.protocol_name and pkt_object.port
+                    
                     #get the tcp_header_size
-
-                    #Get the http offset
-                    #get the http content
+                    #get the http content by using the http_offset
                     #get the packet_list
                     #get the http string
 
                     #If packet is INCOMING
                         
-                        #Get sequence flag from TCP header
+                        #Get sequence flag from TCP header, 1 bit
                         #get sequence number from TCP header, 4 bytes long. This is how many bytes have been received 
                         #make a key of packet's initial ip, destination ip, initial port, destination port
-                            #Parse IP and TCP headers
-
+                            #Parse IP and TCP headers. Get the http payload of the packet
 
                     # TODO: not finished here ****************************************
-
 
                     #     if last_http_type is 'request':
                     #         last_http_type is now 'response', we are sending a response after getting a request
 
                     #         if next_seq_response = sequence, then this is okay to go
                     #             if key is in the http_buffer
-                                    #update the next_seq_response += len(this packet's payload)
+                                    
                                     #add the key into the http_buffer. Value is the payload
-                        
+                                    #update the next_seq_response += len(this packet's payload)
 
                     #     elif last_http_type is 'response': we are sending out a request after getting a response
                             #if next_seq_response = sequence:
                                 # if key is in http_buffer:
 
-                                    #WHAT TO DO HERE
+                                    #WHAT TO DO HERE ----------------------------------------
 
-                                    #add the payload of this response packet to the key
-                                    
+                                    #update the next_seq_response += len(this packet's payload)
 
-                    #     elif sequence_flag is 18:
-                    #         next_seq_response is seq+1
+                    #     elif sequence_flag is FIN or SYN
+                    #         next_seq_response is seq+1 b/c it only increase by one 
 
+                    # TODO: not finished here ****************************************
 
                     # elif packet is OUTGOING
+
+
                         #Get sequence flag
                         #Get seuqnce number
                         #Get the key [initialIP, outgoingIP, intialPort, outgoingPort]
 
+                        #if packet payload > 0 
+                            #handle request and response
+                            #if last_http_type = response
+                                # We are sending out a request
+
+
+                            #if last_http_type = request
+                                # We are sending out a response
+
+
+
+                        #If seq_flag is 2, sending SYN pkt
+                            #update next_seq_request by 1
+                            #update last_http type as a request
+
+                        #If seq_flag is 1, this is a FIN
+                            #clear buffer
 
 
 
