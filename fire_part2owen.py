@@ -25,8 +25,9 @@ class Firewall:
         # -----For http logging----------
         
         #self.prev_http_type
-        #self.http_buffer = {}
-        #self.prev_http_type = "" This is the last HTTP type we sent out, request or response
+        #self.http_buffer = {} [key is [ip_src, ip_dst, port_src, port_dst], value is [pkt_request info, pkt_response info]]
+       
+       #self.prev_http_type = "" This is the last HTTP type we sent out, request or response. After a response, we can log packet
         
         # -----For http logging----------
 
@@ -118,6 +119,12 @@ class Firewall:
 
         
         # ---------------Iterate through log rules------------------------------
+
+        # ------NOTES------------
+        # If seqno is less than next seqNo, pass packet. Else drop if senqno != nextSeqno
+
+
+        # ------NOTES------------
         
         # Iterate the packet through the list of http log rules here
         # f = open("http.log", "a")
@@ -128,11 +135,13 @@ class Firewall:
                 #has to be tcp and port 80. pkt_object.protocol_name and pkt_object.port
                     
                     #get the tcp_header_size
-                    #get the http content by using the http_offset
+                    #http_offset = ihl + tcp header size
+                    #get the http content by using the http_offset value. 
+                    
                     #get the packet_list
-                    #get the http string
+                    #get the http string.
 
-                    #If packet is INCOMING
+                    #If packet is INCOMING: 
                         
                         #Get sequence flag from TCP header, 1 bit
                         #get sequence number from TCP header, 4 bytes long. This is how many bytes have been received 
@@ -148,7 +157,11 @@ class Firewall:
                     #             if key is in the http_buffer
                                     
                                     #add the key into the http_buffer. Value is the payload
+                                        #if the value of this payload is '\r\n\r\n', then there is a break after HTTP header. 
+
                                     #update the next_seq_response += len(this packet's payload)
+
+                            # else drop the packet because out of order
 
                     #     elif last_http_type is 'response': we are sending out a request after getting a response
                             #if next_seq_response = sequence:
@@ -164,7 +177,7 @@ class Firewall:
                     # TODO: not finished here ****************************************
 
                     # elif packet is OUTGOING
-
+                        #We log outgoing HTTP packets. 
 
                         #Get sequence flag
                         #Get seuqnce number
@@ -173,12 +186,22 @@ class Firewall:
                         #if packet payload > 0 
                             #handle request and response
                             #if last_http_type = response
-                                # We are sending out a request
+                                #if this key is in the http_buffer, we can LOG now
+                                    #Get request info 
+                                    #Get response info
+                                    
+                                    #http_create_log() function
 
 
                             #if last_http_type = request
                                 # We are sending out a response
-
+                                #if key is in self.http_buffer:
+                                    #http_buffer[key][0] += pkt[http_offset:]
+                                    
+                                #Else, create a new request for (key) in http buffer
+                                    #self.http_buffer[key] = [pkt[http_offset:]]
+                                
+                                #self.next_seq_request += len(pkt[http_offset:]), update next seq Number
 
 
                         #If seq_flag is 2, sending SYN pkt
@@ -189,27 +212,9 @@ class Firewall:
                             #clear buffer
 
 
-
-
         # ---------------Iterate through log rules------------------------------
 
 
-        #Test packet Quality. Return if bad
-        #if packet_object.pkt_quality == False:
-            #return
-
-        #TODO: If the rule is a log http <rule> we check pkt. If match, log it
-        #Iterate packet through list of reversed rules
-        #For rule in self.log_rules:
-            #Check if the rule is a log and http Rule
-            #if rule[0] == "log" and rule[1] == "http":
-                
-                #Check if the packet is TCP and external port 80
-                #If packet_object.protocol_name == "tcp" and packet_object.extPort == 80:
-
-                    #Check if request or response pkt
-
-                #Else 
 
 
         #Go through firewall rules
@@ -238,6 +243,12 @@ class Firewall:
 
         #None of the rules matched
 
+    def http_create_log(self):
+        # host_name   method  path    version status_code object_size
+        
+        f.flush()
+
+        pass
 
     def create_TCP_rst(self):
 
