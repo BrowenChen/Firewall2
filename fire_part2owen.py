@@ -22,10 +22,16 @@ class Firewall:
 
         # self.log_rules = []
 
+        # -----For http logging----------
+        
         #self.prev_http_type
+        #self.http_buffer = {}
+        
+        # -----For http logging----------
 
 
         rules = open(config['rule'], "r")
+
         #iterate through rules
         # for rule in rules:
             #Get rid of all \n
@@ -90,6 +96,7 @@ class Firewall:
 
         # The example code here prints out the source/destination IP addresses,
         # which is unnecessary for your submission.
+
         src_ip = pkt[12:16]
         dst_ip = pkt[16:20]
         ipid, = struct.unpack('!H', pkt[4:6])    # IP identifier (big endian)
@@ -112,7 +119,8 @@ class Firewall:
         # ---------------Iterate through log rules------------------------------
         
         # Iterate the packet through the list of http log rules here
-        # log_rules = open("http.log", "a")
+        # f = open("http.log", "a")
+        #self.log_rules = log_rules
 
         # for rule in log_rules
             # if rule[0] is "log" and rule[1] is "http"
@@ -125,27 +133,44 @@ class Firewall:
                     #get the http string
 
                     #If packet is INCOMING
-                        #Get sequence flag
-                        #get sequence
+                        
+                        #Get sequence flag from TCP header
+                        #get sequence number from TCP header, 4 bytes long. This is how many bytes have been received 
                         #make a key of packet's initial ip, destination ip, initial port, destination port
+                            #Parse IP and TCP headers
+
 
                     # TODO: not finished here ****************************************
 
 
                     #     if last_http_type is 'request':
-                    #         last_http_type is now 'response'
-                    #         if next_seq_response = sequence
+                    #         last_http_type is now 'response', we are sending a response after getting a request
+
+                    #         if next_seq_response = sequence, then this is okay to go
                     #             if key is in the http_buffer
+                                    #update the next_seq_response += len(this packet's payload)
+                                    #add the key into the http_buffer. Value is the payload
                         
 
-                    #     elif last_http_type is 'response':
-                    #         if key is in http_buffer:
+                    #     elif last_http_type is 'response': we are sending out a request after getting a response
+                            #if next_seq_response = sequence:
+                                # if key is in http_buffer:
+
+                                    #WHAT TO DO HERE
+
+                                    #add the payload of this response packet to the key
+                                    
 
                     #     elif sequence_flag is 18:
                     #         next_seq_response is seq+1
 
 
-                    # elif packet is outgoing
+                    # elif packet is OUTGOING
+                        #Get sequence flag
+                        #Get seuqnce number
+                        #Get the key [initialIP, outgoingIP, intialPort, outgoingPort]
+
+
 
 
 
@@ -284,7 +309,7 @@ class Firewall:
         # Add udp checksum and ip checksum
         # dns_pkt = add_udp_checksum
         # dns_pkt = add_ip_checksum
-        
+
         # Send denied DNS response to host behind the firewall
         self.iface_int_send_ip_packet(dns_pkt)
         return
