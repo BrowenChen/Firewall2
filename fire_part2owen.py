@@ -123,7 +123,6 @@ class Firewall:
         # ------NOTES------------
         # If seqno is less than next seqNo, pass packet. Else drop if senqno != nextSeqno
 
-
         # ------NOTES------------
         
         # Iterate the packet through the list of http log rules here
@@ -148,16 +147,23 @@ class Firewall:
                         #make a key of packet's initial ip, destination ip, initial port, destination port
                             #Parse IP and TCP headers. Get the http payload of the packet
 
-                    # TODO: not finished here ****************************************
+
+                        #if seqNo < next_seq_response:
+                            #pass the packet 
+
+                        #if seqNo > next_seq_response: 
+                            #Drop the packet
+
+                    # TODO: ****************************************
 
                     #     if last_http_type is 'request':
-                    #         last_http_type is now 'response', we are sending a response after getting a request
-
+                    #         
                     #         if next_seq_response = sequence, then this is okay to go
                     #             if key is in the http_buffer
                                     
                                     #add the key into the http_buffer. Value is the payload
                                         #if the value of this payload is '\r\n\r\n', then there is a break after HTTP header. 
+                                            #last_http_type is now 'response'. This is the first message break. 
 
                                     #update the next_seq_response += len(this packet's payload)
 
@@ -170,6 +176,7 @@ class Firewall:
                                     #WHAT TO DO HERE ----------------------------------------
 
                                     #update the next_seq_response += len(this packet's payload)
+                                    #if this packet's payload is '\r\n\r\n', then this is the response break. Start HTTP content body 
 
                     #     elif sequence_flag is FIN or SYN
                     #         next_seq_response is seq+1 b/c it only increase by one 
@@ -186,11 +193,18 @@ class Firewall:
                         #if packet payload > 0 
                             #handle request and response
                             #if last_http_type = response
-                                #if this key is in the http_buffer, we can LOG now
-                                    #Get request info 
-                                    #Get response info
-                                    
-                                    #http_create_log() function
+
+                                #if this key is in the http_buffer, 
+
+
+                                    # If content is '\r\n\r\n'   #we can LOG now
+                                        #Get request info 
+                                        #Get response info
+                                        #http_create_log() function
+                                    # else:
+                                        #http_buffer[key][1] += pkt[http_offset:]
+
+                                #self.next_seq_request += len(pkt[http_offset:]), update next seq Number        
 
 
                             #if last_http_type = request
@@ -243,9 +257,48 @@ class Firewall:
 
         #None of the rules matched
 
-    def http_create_log(self):
+    def http_create_log(self, http_request, http_response, log_rule, ext_ip):
         # host_name   method  path    version status_code object_size
-        
+        # 
+        # Match the packet to the rule[2] host to check if it works. 
+        # Split the http_response into a list by row. 
+        # Return values to be written will be log1, log2, log3, etc..
+        host_present = False 
+        http_req_list = http_request.split('\r\n')
+
+        for line in http_req_list:
+            #Split each line by attribute and vlaue
+            line_values = line.split(':')
+            if line_values[0].lower() == "Host".lower():
+                
+                host_name = line_values[1]
+                host_present = True
+
+        if host_present == False:
+            #log1 is the ext_ip of the TCP connection 
+            # host_name = struct.pact(external_ip) #PARSE this
+
+        http_req_first_line = http_req_list[0].split(" ")
+        #Method field, usually a GET request
+        method = http_req_first_line[0]
+        #Path, usually /
+        path = http_req_first_line[1]
+        # Version 
+        version = http_req_first_line[2]
+
+        #Status code, first line
+        http_res_list = http_response.split('\r\n')
+
+        http_res_first_line = http_res_list.split(" ")
+        statusCode = http_res_first_line[2]
+
+
+        #TO BE CONTINUED
+
+
+
+
+
         f.flush()
 
         pass
