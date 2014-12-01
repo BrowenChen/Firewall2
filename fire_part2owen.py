@@ -26,9 +26,14 @@ class Firewall:
         
         #self.prev_http_type
         #self.http_buffer = {} [key is [ip_src, ip_dst, port_src, port_dst], value is [pkt_request info, pkt_response info]]
-       
-       #self.prev_http_type = "" This is the last HTTP type we sent out, request or response. After a response, we can log packet
+        #self.prev_http_type = "" This is the last HTTP type we sent out, request or response. After a response, we can log packet
+        #self.next_seq_no
+
         
+
+        #incoming_http_buffer each has: seqno, has_header, expected seqno, ..
+        #outgoing_http_buffer
+
         # -----For http logging----------
 
 
