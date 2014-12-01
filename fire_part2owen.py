@@ -290,18 +290,55 @@ class Firewall:
         http_res_list = http_response.split('\r\n')
 
         http_res_first_line = http_res_list.split(" ")
-        statusCode = http_res_first_line[2]
+        status_code = http_res_first_line[2]
+
+        #if not present, -1
+        object_size = -1
+        for line in http_res_list:
+            line_list = line.split(":")
+            if line_list[0].lower() == "Content-Length".lower():
+                object_size = int(line_list[1])
+
+
+        http_log = str(method) + " " + str(path) + " " + str(version) + " " + str(status_code) + " " + str(object_size) 
+
 
 
         #TO BE CONTINUED
+        log_verdict = False
+        if host_present == True:
+            dns_domain = rule[2][::-1]
+            log_verdict = self.check_domain(dns_domain, host_name)
+
+        #if log_verdict == True:
+            #Log http_log
+
+        #FIGURE OUT HOW TO LOG ONLY ONCE AND NOT LOG MULTIPLE TIMES IF MULTIPLE RULES MATCH
+        if log_verdict:
+            f.writelines(http_log)
+            f.flush()
+
+        return
 
 
+    def checkDomain(self, domain, checkDomain):
+        #Used to check if domain names match
+        # print "Start"
+        dns_domain = domain.split(".")
+        check_domain = checkDomain.split(".")
 
-
-
-        f.flush()
-
-        pass
+        if "*" in dns_domain:
+            if dns_domain[0] != "*":
+                print "malformed"
+                return False
+            # print "Yes"
+            dns_domain_rest = dns_domain[1:]
+            splice = len(check_domain) - len(dns_domain_rest)
+            dns_check_rest = check_domain[splice:]
+            # print dns_domain_rest
+            return (dns_check_rest == dns_domain_rest)
+        else:
+            return (dns_domain == check_domain)
 
     def create_TCP_rst(self):
 
