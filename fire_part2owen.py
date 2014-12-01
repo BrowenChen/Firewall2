@@ -8,6 +8,20 @@ import re
 # You must NOT use any 3rd-party libraries, though.
 # Authors: Allan Peng, Owen Chen
 
+
+
+# TODO MISSING: 
+    # 1) Make seperate http_buffers for incoming and outgoing. Keep seqno and header information
+    # 2) HTTP log writes, take into account 
+                # 1) no host, using ext_ip
+                # 2) dotted quad
+                # 3) normal domain name
+
+    # 3) flow of requests and sends. Persistent conncetions
+    # 4) Drop and Pass packets
+    # 5) If after '/r/n/r/n' for first request, does response come immediately after?
+
+
 class Firewall:
     def __init__(self, config, iface_int, iface_ext):
         self.iface_int = iface_int
@@ -21,6 +35,7 @@ class Firewall:
 
 
         # self.log_rules = []
+
 
         # -----For http logging----------
         
