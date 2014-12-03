@@ -9,7 +9,6 @@ import re
 # Authors: Allan Peng, Owen Chen
 
 
-
 # TODO MISSING: 
     # 1) Make seperate http_buffers for incoming and outgoing. Keep seqno and header information
     # 2) HTTP log writes, take into account 
@@ -27,7 +26,6 @@ class Firewall:
         self.iface_int = iface_int
         self.iface_ext = iface_ext
         # TODO: Load the firewall rules (from rule_filename) here.
-        
 
         self.firewall_rules = []
         self.countryRules = {}
@@ -375,16 +373,13 @@ class Firewall:
         if DNS_query != 0:
             #Not a DNS query
             return 
-        
-        
-        
+            
         # Create a new packet form IP header of old packet
         dns_pkt = pkt[:dns_pkt_ihl]
 
         #reset TTL to max value
         dns_pkt = dns_pkt[:8] + struct.pack("!B", 255) + dns_pkt[9:]
     
-        
         # UDP header, 8 more than original ihl
         dns_pkt = dns_pkt + pkt[dns_pkt_ihl: dns_pkt_ihl + 8]
         
@@ -395,7 +390,6 @@ class Firewall:
         # Row 1
         # Get DNS identifier from old packet
         dns_pkt = dns_pkt + pkt[dns_pkt_ihl+8:dns_pkt_ihl+10]
-
     
         # ROW 2
         # Set DNS response flags 0x8180 and copy RCODE over to the 0
@@ -417,7 +411,6 @@ class Firewall:
         # Get the domain name from query for Name
         #Confused here, this is the value to set pointer to query domain?
         dns_pkt += "\c0\0c"
-
 
         # Response type A
         dns_pkt += "\x00\x01"
@@ -477,8 +470,6 @@ class Firewall:
     #         solution = str(1^(1&foo)) + solution
     #         foo>>=1
     #     return solution
-
-
 
     def swap_pkt_dir(self, pkt):
         #Swap src and dst ip
