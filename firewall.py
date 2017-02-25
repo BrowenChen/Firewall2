@@ -7,14 +7,6 @@ import collections
 import random
 # Authors: Allan Peng, Owen Chen
 
-
-# CHANGE_LOG POST DEADLINE
-# - After syn, add len(pkt[offset:], dont add 1 + 
-# - requests are outgoing directions, responses are incomin
-# - changed http data to ihl + tcp_header_size, both recalculated to get right values
-# - originally, \r\n\r\n wasn't being found in pkt, but now it is 
-
-
 class Firewall:
     def __init__(self, config, iface_int, iface_ext):
         self.iface_int = iface_int
@@ -214,8 +206,6 @@ class Firewall:
                             deny = False
  
             elif rule[1] == "DNS" and is_dns:
-                #print("parsing dns")
- 
                 does_apply = False
                 dns_domain_list = rule[2].lower()
                 # Check if the DNS rule has an asterisk
@@ -267,7 +257,6 @@ class Firewall:
     #Rule list, IP Address
     def valid_ip(self, rule, address):
         #don't forget drop.
-        #Any
         if rule[2] == "ANY":
             return True
         #2 byte country code
@@ -302,7 +291,6 @@ class Firewall:
         elif "-" in rule[3]:
             #This is a range.
             port_range = rule[3].split("-")
-            #Do shit here
             return int(port) >= int(port_range[0]) and int(port) <= int(port_range[1])
  
         elif int(rule[3]) == int(port):
@@ -343,12 +331,10 @@ class Firewall:
         if len(datagram) < 12: return (False, None)
         udp_size = struct.unpack('!H', datagram[4:6])[0]
         if udp_size != len(datagram):
-            #print "malformed"
             return (False, None)
         datagram = datagram[8:]
  
         dns_qcount = struct.unpack("!H", datagram[4:6] )[0]
-        #print dns_qcount
         if dns_qcount != 1: return (False, None)
  
         i = 12
@@ -361,8 +347,6 @@ class Firewall:
                 domain += chr(struct.unpack("!B", datagram[i])[0])
                 j+=1
             elif j == 0:
-                #print "starting"
-                #print search
                 search = struct.unpack("!B", datagram[i])[0]
                 domain += "."
                 j +=1
@@ -559,11 +543,9 @@ class Firewall:
  
             foo = (self.http_logs[key]).toString()
             if foo == False:
-                print "Do not log. No rules apply"
             else:
                 f.write(foo)
                 f.write("\n")
-                print "Check if things have been written."
             self.http_logs[key] = None
             f.flush()
  
@@ -599,10 +581,8 @@ class log_buffer:
                     if not self.stop_parsing_request:
                         
                         if "\r\n\r\n" in pkt:
-                            print "testing"
                             joe = pkt.split('\r\n\r\n')
                             pkt = joe[0]
-                            print "Ending now"
                             self.stop_parsing_request = True
 
                         self.request_header += pkt
@@ -624,11 +604,7 @@ class log_buffer:
 
         #Response Packet
         elif direction == PKT_DIR_INCOMING and self.stop_parsing_request:
-            print " "
-            print "###########################RESPONSE TIME!!!!!!"
-            print pkt
             if self.other_seqno == None:
-                print "First Response"
                 self.other_seqno = seqno
                 self.first_response = True
 
@@ -642,13 +618,9 @@ class log_buffer:
                 if syn:
                     self.other_seqno += 1
                 else:
-                    print " This is not a SYN, RESPONSE packet"
-                    
                     if "\r\n\r\n" in pkt:
-                        print "found line break for response,  WE CAN WRITE NOW :D:D:D:D:D:D"
                         joe = pkt.split('\r\n\r\n')
                         pkt = joe[0]
-                        print "Ending now :D:D:D:D:D:D :D:D:D:D:D:D :D:D:D:D:D:D:D:D:D:D:D:D"
                         self.canPrint = True
                         self.stop_parsing_request = True
                         self.first_response = False
@@ -658,23 +630,18 @@ class log_buffer:
 
 
                     if self.first_response == True:
-                        print "First response"
                         self.other_seqno += max(1, (len(pkt)))
                         self.first_response = False
 
                     else: 
                         if self.stop_parsing_response == False:
                             self.other_seqno += (len(pkt))
-                
                 self.other_seqno = (self.other_seqno % pow(2,32))
-
-
 
             elif self.incoming_seqno < seqno:
                 return
 
             elif self.incoming_seqno > seqno:
-                #drop the packet
                 pass
 
             else:
@@ -739,7 +706,6 @@ class log_buffer:
  
     def checkDomain(self, domain):
         #Used to check if domain names match
-        # print "Start"
         for i in self.log_rules:
             if domain:
                 if "*" in i:
