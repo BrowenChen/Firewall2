@@ -7,14 +7,6 @@ import collections
 import random
 # Authors: Allan Peng, Owen Chen
 
-
-# CHANGE_LOG POST DEADLINE
-# - After syn, add len(pkt[offset:], dont add 1 + 
-# - requests are outgoing directions, responses are incomin
-# - changed http data to ihl + tcp_header_size, both recalculated to get right values
-# - originally, \r\n\r\n wasn't being found in pkt, but now it is 
-
-
 class Firewall:
     def __init__(self, config, iface_int, iface_ext):
         self.iface_int = iface_int
