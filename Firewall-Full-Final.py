@@ -5,12 +5,7 @@ import struct
 import re
 import collections
 import random
-# TODO: Feel free to import any Python standard moduless as necessary.
-# (http://docs.python.org/2/library/)
-# You must NOT use any 3rd-party libraries, though.
 # Authors: Allan Peng, Owen Chen
-# what
-# wagyu
 
 
 # CHANGE_LOG POST DEADLINE
@@ -24,14 +19,12 @@ class Firewall:
     def __init__(self, config, iface_int, iface_ext):
         self.iface_int = iface_int
         self.iface_ext = iface_ext
-        # TODO: Load the firewall rules (from rule_filename) here.
         rules = open(config['rule'], "r")
  
         self.firewall_rules = []
         self.countryRules = {}
         self.countryCodes = set()
         self.log_rules = []
-        #not sure what to do with this yet.
         self.http_logs = {}
         for rule in rules:
             #Get rid of all \n
@@ -74,26 +67,18 @@ class Firewall:
             if not re.search(pattern, geo):
                 continue
             geo = geo.split(" ")
-             #Convert IP into number
  
             start = struct.unpack("!I", socket.inet_aton(geo[0]))[0]
- 
             end = struct.unpack("!I", socket.inet_aton(geo[1]))[0]
             country = geo[2].upper()
             if self.countryRules.get(country) == None:
                 self.countryRules[country] = []
             ipRange = (start, end)
             self.countryRules[country].append(ipRange)
-        #print("done bitch")
-        #print self.countryRules.keys()
  
     # @pkt_dir: either PKT_DIR_INCOMING or PKT_DIR_OUTGOING
     # @pkt: the actual data of the IPv4 packet (including IP header)
     def handle_packet(self, pkt_dir, pkt):
-        #print("handling packet")
- 
-        # The example code here prints out the source/destination IP addresses,
-        # which is unnecessary for your submission.
         src_ip = pkt[12:16]
         dst_ip = pkt[16:20]
         ipid, = struct.unpack('!H', pkt[4:6])    # IP identifier (big endian)
@@ -102,10 +87,6 @@ class Firewall:
             dir_str = 'incoming'
         else:
             dir_str = 'outgoing'
- 
-        # print '%s len=%4dB, IPID=%5d  %15s -> %15s' % (dir_str, len(pkt), ipid,
-                 # socket.inet_ntoa(src_ip), socket.inet_ntoa(dst_ip))
- 
         length = struct.unpack("!H" ,pkt[2:4])[0]
         num_lines = struct.unpack('!B',pkt[0]) [0] & 0xf
         #this is wrong. check later.
@@ -119,7 +100,6 @@ class Firewall:
  
         log = False
  
-        #print (Transfer)
         #iterate through log rules here.
         if Transfer == "TCP":
  
@@ -138,13 +118,10 @@ class Firewall:
                 ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
                 tcp_header_size = (ord(struct.unpack("!s", pkt[ihl + 12])[0]) >> 4) * 4
 
-                #offset = struct.unpack("!B",datagram[12]) [0]/16
                 offset = ihl + tcp_header_size
                 ack_byte = struct.unpack("!B", datagram[13])[0]
                 syn = bool((ack_byte>>1)&1)
                 ack = bool((ack_byte>>4)&1)
-                 #print ack
- 
                 seqno = struct.unpack("!I", datagram[4:8])[0]
                 http_data = pkt[offset:]
                 self.do_log_shit(ext_addr, http_data, pkt_dir, internal_port, seqno, syn, ack)
@@ -158,36 +135,24 @@ class Firewall:
  
         elif deny:
             if Transfer == "TCP":
-                #print ("TCP RST packet")
                 source_port, dest_port = self.parse_tcp(datagram)
- 
                 rst_pkt = self.create_tcp_packet(pkt, source_address, dest_address, source_port, dest_port)
                 if pkt_dir == PKT_DIR_OUTGOING:
-                    #print("Sending packeting inwards s")
                     self.iface_int.send_ip_packet(rst_pkt)
                 elif pkt_dir == PKT_DIR_INCOMING:
                     self.iface_ext.send_ip_packet(rst_pkt)
             elif Transfer == "UDP":
-                #print ("DNS Deny")
- 
                 is_dns, domain = self.parse_dns(datagram)
- 
                 dns_packet = self.create_DNS_deny(pkt, domain)
-                #print ("DNS PACKET CREATEDs")
                 if pkt_dir == PKT_DIR_INCOMING:
-                    #print "incoming send outgoing"
                     self.iface_ext.send_ip_packet(dns_packet)
                 elif pkt_dir == PKT_DIR_OUTGOING:
-                    #print "outgoing sending ingoing"
                     self.iface_int.send_ip_packet(dns_packet)
             else:
-              #  print("Somethings wrong. This is a deny but theres an exception")
                 raise Exception
         else:
-            #print "dropping packet!"
             pass
  
-    #returns True if we pass on the packet. False if drop.
     def can_send(self, pkt_dir, datagram, dest_address, Transfer, bytes_in_packet, source_address):
         verdict = True
         is_dns = None
@@ -239,7 +204,6 @@ class Firewall:
                        do_verdict = self.applicable_rule(rule, source_address, port)
                     if do_verdict:
                         #Drop
-                        #print rule[0]
                         if rule[0] == "DROP":
                             verdict = False
                         if rule[0] == "DENY":
@@ -254,8 +218,6 @@ class Firewall:
  
                 does_apply = False
                 dns_domain_list = rule[2].lower()
-                #print server
-                #print dns_domain_list
                 # Check if the DNS rule has an asterisk
                 if "*" in dns_domain_list:
                     if dns_domain_list[0] != "*":
@@ -269,7 +231,6 @@ class Firewall:
                     does_apply = dns_domain_list == server
                 if does_apply:
                     #Do the verdict of the DNS
-                #print "does apply!"
                     if rule[0] == "DROP":
                         verdict = False
                     if rule[0] == "PASS":
@@ -278,13 +239,10 @@ class Firewall:
                     if rule[0] == "DENY":
                         verdict = False
                         deny = True
- 
- 
         return (verdict, deny)
  
     def applicable_rule(self, rule, dest_address, port):
         #Used to see if we should apply the verdict
-        #Is packet protocol == rule[1]?
         result = self.valid_ip(rule, dest_address) and self.valid_port(rule, port)
         return result
  
@@ -293,50 +251,31 @@ class Firewall:
  
     #returns True if IP_address belongs to country.
     def in_country(self,a, country):
-        #binary search
-        #print a
- 
-        #print country
         country = self.countryRules[country]
         minimum = 0
         maximum = len(country)
         while minimum < maximum:
             i = (minimum + maximum)/2
- 
             if self.in_range(a, country[i]):
-                #print "TRUE"
                 return True
- 
             if country[i][0] >  a:
                 maximum = i -1
             elif country[i][0] < a:
                 minimum = i +1
  
-        #print "FALSE FALSE FALSE"
         return False
     #Rule list, IP Address
     def valid_ip(self, rule, address):
         #don't forget drop.
         #Any
-        #print rule[2]
         if rule[2] == "ANY":
-            #print "ANANYANDA"
             return True
         #2 byte country code
         if len(rule[2]) == 2:
-            #print "country code"
-            #print rule[2]
- 
-            #print "country!!!!"
             return self.in_country(address, rule[2])
  
         #IP prefix
         elif "/" in rule[2]:
-            #Split the slash notation
-            #Range = 2 ^ (32 - Number after slash notation) IP addresses in range.
-            #IP number be32 - fore slash converted to
-            #If rule[2] converted to a number is bigger than lower bound and lower than upper bound
-            #Return True.
             slash_notation = rule[2].split('/')
             #Number of IP's from slash notation
             rightShift = int(slash_notation[1]) -32
@@ -370,12 +309,6 @@ class Firewall:
             return True
         return False
  
-    #DNS Cases
-    # TODO: You can add more methods as you want.
-    #parses ip header
-    #returns a tuple containing:
-    #(Protocol, bytes_in_packet, source, destination)
-    #Protocol is NONE if not TCP,UDP, or ICMP
     def parse_ip(self, header):
         Protocol = struct.unpack("!B", header[9])[0]
         bytes_in_packet = struct.unpack("!H",header[2:4])[0]
@@ -405,7 +338,6 @@ class Firewall:
  
     #returns true if it's a DNS packet.
     def parse_dns(self, datagram):
-        #print "THIS IS A DNS PACKET"
         # DNS packet must have QDCOUNT set to 1 to be considered DNS
         #8 Bytes header
         if len(datagram) < 12: return (False, None)
@@ -495,23 +427,15 @@ class Firewall:
  
     #creates a TCP RST packet.
     def create_tcp_packet(self, pkt, source_addr, dest_addr, source_port, dest_port):
- 
         # IP header
         ihl = (ord(struct.unpack('!s', pkt[0])[0]) & 15) * 4
-        #tcp_rst = pkt[:ihl-8]
         tcp_rst = struct.pack('!L', 0x45000028) + struct.pack('!L', 0) + struct.pack('!L', 0x40060000)
-        # tcp_rst = tcp_rst + dest_port + source_port #Adding 4 byte ports. 24 totla bytes
         tcp_rst += pkt[16:20] + pkt[12:16]   # swap addresses
         tcp_rst = tcp_rst[0:10] + struct.pack("!H", self.ip_checksum(tcp_rst)) + tcp_rst[12 :] # IP header
- 
-        # print (len(tcp_rst) == 20)
- 
         #TCP header
         #Source and Dest  ports reversed
         tcp_rst += pkt[ihl+2:ihl+4] + pkt[ihl: ihl+2]
         #4 Bytes of seqno, #4 bytes of ackNo
-        # print ("SEQNO AND ACK")
-        # print struct.unpack('!L', pkt[ihl + 8 : ihl + 12])[0] + 1
  
         tcp_rst += struct.pack('!L', 0)
         tcp_rst += struct.pack('!L', (struct.unpack('!L', pkt[ihl + 4 : ihl + 8])[0] + 1)) 
@@ -520,15 +444,7 @@ class Firewall:
  
  
         tcp_rst += struct.pack('!H', 0x5014) + struct.pack("!H",0) # flags and window
-        #tcp_rst += struct.pack('!L', 0)
- 
-        # tcp_rst += struct.pack('!H', 0x5014)
-        # tcp_rst += pkt[ihl + 14 : ihl + 16] # flags window
-        # tcp_rst += struct.pack("!H", 0)
-        #2 byte checksum TCP,
-        #   tcp_rst = tcp_rst[0:36] + struct.pack('!H', self.compute_Checksum(tcp_rst, "TCP")) + tcp_rst[38:]
         tcp_rst = tcp_rst[0:36] + struct.pack('!H', self.tcp_checksum(tcp_rst)) + struct.pack("!H",0)
-        #tcp_rst = struct.pack('!H', self.tcp_checksum(tcp_rst, source_addr, dest_addr, len(tcp_rst)+4))
  
         return tcp_rst
  
@@ -580,7 +496,6 @@ class Firewall:
         dns_pkt = dns_pkt + pkt[dns_pkt_ihl+8:dns_pkt_ihl+10]
         # ROW 2
         # Set DNS response flags 0x8180 and copy RCODE over to the 0 error here
-        #dns_pkt = dns_pkt + "\x81" + (chr(struct.unpack('!B', "\x80")[0] | ord(pkt[dns_pkt_ihl+11])))
         dns_pkt = dns_pkt + struct.pack('!H',0x8000)
         # print len(dns_pkt)
  
@@ -633,20 +548,7 @@ class Firewall:
             num = num >> 1
         return retval
  
-    def udp_checksum(self, *args):
-        #too lazy to implement
-        return "\xff\xff"
- 
     def do_log_shit(self, address, pkt, direction, internal_port, seqno, syn, ack):
-        print "PRINT FUCKING PACKETSPRINT FUCKING PACKETSPRINT FUCKING ****************"
-        print direction
-        print PKT_DIR_OUTGOING
-
-        print " "
-        print pkt
-        print "PRINT FUCKING PACKETSPRINT FUCKING PACKETSPRINT FUCKING ****************"
-
-
         key = (address, internal_port)
         if not self.http_logs.get(key):
             self.http_logs[key] = log_buffer(direction, address)
@@ -670,12 +572,7 @@ class log_buffer:
     def __init__(self, direction, ip_address):
         self.incoming_seqno = None
         self.other_seqno = None
-
-
-
-        #this is the direction of requets.
         self.pkt_direction = direction
- 
         self.request_header = ""
         self.response_header = ""
         self.last_four_incoming = []
@@ -694,18 +591,11 @@ class log_buffer:
             #Start the TCP HANDSHAKE. SynAck
             if self.incoming_seqno == None:
                 #Setting seqNo to 0 relative
-                print " "
-                print "FIRST REQUEST PACKET"
                 self.incoming_seqno = seqno
-                print seqno
 
             if self.incoming_seqno == seqno:
                 if not syn:
                     self.last_four_incoming.append(pkt)
- 
-                    # if len(self.last_four_incoming) < 4:
-                    #     self.last_four_incoming.pop(0)
- 
                     if not self.stop_parsing_request:
                         
                         if "\r\n\r\n" in pkt:
@@ -716,28 +606,17 @@ class log_buffer:
                             self.stop_parsing_request = True
 
                         self.request_header += pkt
- 
-                    # if "\r\n\r\n" in "".join(self.last_four_incoming):
-                    #     print "stop parsing"
-                    #     self.last_four_incoming = []
-                    #     self.stop_parsing_request = True
-
                 if syn:
-                    
                     self.incoming_seqno += 1
                 else:
-                    
                     if self.stop_parsing_request == False:
                         print "adding "
                         self.incoming_seqno += (len(pkt))
-
                 self.incoming_seqno %= pow(2, 32)
-            
             elif self.incoming_seqno < seqno:
                 return
 
             elif self.incoming_seqno > seqno:
-                #drop the packet
                 pass
 
             else:
@@ -753,28 +632,13 @@ class log_buffer:
                 self.other_seqno = seqno
                 self.first_response = True
 
-
-            #Havent seen the response packet before
-            # print (seqno - self.other_seqno)
-            # if True:
             if seqno == self.other_seqno:
- 
                 if not syn:
                     self.last_four_outgoing.append(pkt)
                     if len(self.last_four_outgoing) > 4:
                         self.last_four_outgoing.pop(0)
                     if not self.stop_parsing_response:
                         self.response_header += pkt
- 
- 
-                    # if "\r\n\r\n" in "".join(self.last_four_outgoing) \
-                    #     or (self.stop_parsing_response and ("\x00\x00" in "".join(self.last_four_outgoing))):
- 
-                    #     self.last_four_outgoing = []
-                    #     if self.stop_parsing_response:
-                    #         self.canPrint = True
-                    #     self.stop_parsing_response = True
- 
                 if syn:
                     self.other_seqno += 1
                 else:
@@ -822,10 +686,9 @@ class log_buffer:
         # Match the packet to the rule[2] host to check if it works.
         # Split the http_response into a list by row.
         # Return values to be written will be log1, log2, log3, etc..
-        print ("$$$$$WRITING LOGS $$$$$$$$$$$$")
         host_name = None
  
-         #these lines of code just strip off everything before the first HTTP method.
+        #these lines of code just strip off everything before the first HTTP method.
         super_hacky_regex = "(GET)|(POST)|(PUT)|(HEAD)|(POST)|(PUT)|(DELETE)|(TRACE)|(OPTIONS)|(CONNECT)|(PATCH)"
         hack = re.findall(super_hacky_regex, http_request)[0][0]
         first_match =  http_request.find(hack)
@@ -842,13 +705,13 @@ class log_buffer:
                 break
  
         http_req_first_line = http_req_list[0].strip().split(" ")
-        #Method field, usually a GET request
+        # Method field, usually a GET request
         method = http_req_first_line[0]
-        #Path, usually /
+        # Path, usually /
         path = http_req_first_line[1]
         # Version
         version = http_req_first_line[2]
-        #Status code, first line
+        # Status code, first line
  
         shave = http_response.index("HTTP")
         http_response = http_response[shave:]
@@ -857,7 +720,6 @@ class log_buffer:
         http_res_first_line = http_res_list[0].strip().split(" ")
         status_code = http_res_first_line[1]
  
-        #if not present, -1
         object_size = -1
         for line in http_res_list:
             line_list = line.strip().split(":")
@@ -865,7 +727,6 @@ class log_buffer:
             if line_list[0].lower() == "Content-Length".lower():
                 object_size = int(line_list[1])
         http_log = False
-        #if self.checkDomain(host_name):
         if host_name == None:
             http_log = " ".join([self.ip_address, str(method), str(path),  \
             str(version), str(status_code), str(object_size)])
